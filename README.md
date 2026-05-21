@@ -32,7 +32,7 @@ Your Workflow Steps
 
 ## Workshop Stages
 
-The pipeline in `.github/workflows/main.yml` runs 7 sequential stages:
+The pipeline in `.github/workflows/main.yml` runs 11 sequential stages:
 
 ### Stage 1 — JWT Auth & Secret Retrieval
 Conjur authenticates the workflow using GitHub's OIDC JWT. No API keys or passwords are stored anywhere — GitHub's identity is the credential.
@@ -58,11 +58,11 @@ Connects to the database using the current Conjur credentials and prompts the pr
 ### Stage 8 — Environment Promotion (dev → staging → prod)
 Three sub-stages chained with `needs:`. Each runs in a different GitHub Environment with its own secrets. The `prod` job pauses and waits for a human reviewer to approve before running — demonstrating governance over production deployments. Requires `staging` and `prod` GitHub Environments to be created under Settings → Environments, with at least one Required Reviewer on `prod`.
 
-### Stage 9 — SSH Deploy with Key from Conjur
-Retrieves an SSH private key stored in Privilege Cloud, writes it to a temp file with `chmod 600`, connects to a remote server, runs a command, and immediately deletes the key file. The key is never committed to the repo or stored on the runner permanently.
+### Stage 9 — SSH Deploy with Credentials from Conjur
+Retrieves SSH credentials (`username`, `password`, `address`) from the `jumpserver` account in Privilege Cloud and connects to the remote server using `sshpass`. No credentials are stored in the repo or in GitHub Secrets.
 
 ### Stage 10 — Docker Registry Login with Conjur Credentials
-Fetches Docker registry `username` and `password` from Conjur, performs `docker login` with `--password-stdin` (no credential in the command line), pulls an image from the private registry, and logs out. Demonstrates credential injection into container workflows.
+Fetches Docker Hub `username` and `password` from the `dockerhub_aslan` account in Privilege Cloud via Conjur, performs `docker login docker.io` with `--password-stdin` (no credential in the command line), and logs out. Demonstrates credential injection into container workflows.
 
 ### Stage 11 — Audit Trail
 Authenticates with Conjur directly via the JWT and calls the Conjur audit API to retrieve the last 20 secret fetch events. Displays who accessed what and when — showing the full traceability that Conjur provides for compliance and incident response.
@@ -131,17 +131,16 @@ Go to **Settings → Secrets and variables → Actions** and add:
 |--------|-------|
 | `CONJUR_URL` | `https://<tenant>.secretsmgr.cyberark.cloud/api` |
 | `CONJUR_SERVICE_ID` | JWT authenticator ID (e.g. `github`) |
-| `DB_ADDRESS_PLAIN` | Database host address (for Stage 4 hardcoded demo) |
-| `DB_ADDRESS_PLAIN` | Database host address for Stage 4 hardcoded failure demo |
+| `DB_ADDRESS_PLAIN` | Database host address — used only in Stage 4 hardcoded failure demo |
 
-### 4. Ensure the Self-Hosted Runner Has MySQL Client
+### 4. Ensure the Self-Hosted Runner Has Required Tools
 
 ```bash
 # Ubuntu / Debian
-sudo apt-get install -y mysql-client
+sudo apt-get install -y mysql-client sshpass
 
 # RHEL / Amazon Linux
-sudo yum install -y mysql
+sudo yum install -y mysql sshpass
 ```
 
 ---
@@ -209,7 +208,7 @@ path/to/variable|ENV_VAR_NAME;path/to/other/variable
 ├── entrypoint.sh                 # JWT auth + secret retrieval logic
 ├── .github/
 │   └── workflows/
-│       └── main.yml              # 7-stage workshop pipeline
+│       └── main.yml              # 11-stage workshop pipeline
 ├── github-authn-jwt.yml          # Sample: JWT authenticator Conjur policy
 ├── github-app-id.yml             # Sample: app host identity Conjur policy
 └── bin/
