@@ -149,7 +149,7 @@ function load_container_image_into_act() {
   fi
 
   # Copy and load the container image tar file created by build_release into the act container
-  CONTAINER_IMAGE_TAR=$(ls -t ../conjur-action-*.tar 2>/dev/null | head -1)
+  CONTAINER_IMAGE_TAR=$(ls -t ../workshop-action-*.tar 2>/dev/null | head -1)
   echo "$CONTAINER_IMAGE_TAR"
   if [ -n "$CONTAINER_IMAGE_TAR" ]; then
     docker cp "$CONTAINER_IMAGE_TAR" act_container:/tmp/
@@ -182,7 +182,7 @@ function main() {
     export CONJUR_ACCOUNT=conjur
     export CONJUR_AUTHN_LOGIN=$INFRAPOOL_CONJUR_AUTHN_LOGIN
     echo "$INFRAPOOL_CONJUR_AUTHN_TOKEN" > "$(bin_dir)/access_token"
-    export CONJUR_AUTHN_TOKEN_FILE="/conjur-action-git/bin/access_token"
+    export CONJUR_AUTHN_TOKEN_FILE="/workshop-action-git/bin/access_token"
     export CONJUR_SSL_CERTIFICATE=$(cat $(bin_dir)/cloud_ca.pem)
     export CONJUR_SECRET="data/github-app/Dev-Team-credential1"
     export DOCKER_NETWORK='conjur_action'
@@ -198,7 +198,7 @@ function main() {
     export CONJUR_ACCOUNT=conjur
     export CONJUR_AUTHN_LOGIN=$INFRAPOOL_CONJUR_AUTHN_LOGIN
     echo "$INFRAPOOL_CONJUR_AUTHN_TOKEN" > "$(bin_dir)/access_token"
-    export CONJUR_AUTHN_TOKEN_FILE="/conjur-action-git/bin/access_token"
+    export CONJUR_AUTHN_TOKEN_FILE="/workshop-action-git/bin/access_token"
     export CONJUR_SECRET="data/github-app/Dev-Team-credential1"
     export DOCKER_NETWORK='conjur_action'
     make_network $DOCKER_NETWORK
@@ -234,12 +234,12 @@ EOF
   if [[ "$ENTERPRISE" == "true" ]]; then
     docker compose -f docker-compose.enterpise.yml up -d --build act
     load_container_image_into_act "docker-compose.enterpise.yml"
-    docker compose -f docker-compose.enterpise.yml exec -T act bash -c "cp /conjur-action-git/bin/main.yml /conjur-action-git/.github/workflows"
+    docker compose -f docker-compose.enterpise.yml exec -T act bash -c "cp /workshop-action-git/bin/main.yml /workshop-action-git/.github/workflows"
     docker compose -f docker-compose.enterpise.yml exec -T act bash -c "act --network $DOCKER_NETWORK -P node:16-buster-slim --pull=false --secret-file=./.github/workflows/.secrets push"
   else
     docker compose up -d --build act
     load_container_image_into_act "docker-compose.yml"
-    docker compose exec -T act bash -c "cp /conjur-action-git/bin/main.yml /conjur-action-git/.github/workflows"
+    docker compose exec -T act bash -c "cp /workshop-action-git/bin/main.yml /workshop-action-git/.github/workflows"
     echo "---- running github action locally ----"
     docker compose exec -T act bash -c "act --network $DOCKER_NETWORK -P node:16-buster-slim  --pull=false --secret-file=./.github/workflows/.secrets push"
   fi
