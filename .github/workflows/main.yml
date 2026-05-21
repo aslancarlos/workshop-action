@@ -66,9 +66,7 @@ jobs:
           url: ${{ secrets.CONJUR_URL }}
           account: conjur
           authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
-          secrets: >-
-            data/vault/dev-demo-aslan/asramos_pcloud_pov/username|APP_USERNAME;
-            data/vault/dev-demo-aslan/asramos_pcloud_pov/password|APP_PASSWORD
+          secrets: "data/vault/dev-demo-aslan/asramos_pcloud_pov/username|APP_USERNAME;data/vault/dev-demo-aslan/asramos_pcloud_pov/password|APP_PASSWORD"
 
       - name: "Masking demo: each character spaced out to confirm value was set"
         run: |
@@ -109,10 +107,7 @@ jobs:
           url: ${{ secrets.CONJUR_URL }}
           account: conjur
           authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
-          secrets: >-
-            data/vault/dev-demo-aslan/dbuser_dual/username|DB_USERNAME;
-            data/vault/dev-demo-aslan/dbuser_dual/password|DB_PASSWORD;
-            data/vault/dev-demo-aslan/dbuser_dual/address|DB_ADDRESS
+          secrets: "data/vault/dev-demo-aslan/dbuser_dual/username|DB_USERNAME;data/vault/dev-demo-aslan/dbuser_dual/password|DB_PASSWORD;data/vault/dev-demo-aslan/dbuser_dual/address|DB_ADDRESS"
 
       - name: Show database host (address is not a password, safe to print)
         run: echo "Connecting to database at $DB_ADDRESS"
