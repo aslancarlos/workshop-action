@@ -4,7 +4,7 @@
 
 A GitHub Actions workshop demonstrating secure secrets delivery using **CyberArk Conjur + Privilege Cloud**. It is based on the open-source `cyberark/conjur-action` and adapted for hands-on training sessions.
 
-The workflow (`main.yml`) contains 7 sequential stages, each teaching a specific concept:
+The workflow (`main.yml`) contains 11 sequential stages, each teaching a specific concept:
 
 | Stage | Job ID | Concept |
 |-------|--------|---------|
@@ -15,9 +15,9 @@ The workflow (`main.yml`) contains 7 sequential stages, each teaching a specific
 | 5 | `stage-5-least-privilege` | Authorized access succeeds; unauthorized is denied |
 | 6 | `stage-6-real-query` | End-to-end: Conjur credentials → real MySQL query |
 | 7 | `stage-7-rotation` | Credential rotation without pipeline changes |
-| 8 | `stage-8-promote-dev/staging/prod` | Environment promotion dev→staging→prod with approval gate on prod |
-| 9 | `stage-9-ssh-deploy` | SSH private key from Conjur used for remote deploy |
-| 10 | `stage-10-docker-registry` | Docker registry login with Conjur credentials |
+| 8a/b/c | `stage-8-promote-dev/staging/prod` | Environment promotion dev→staging→prod with approval gate on prod |
+| 9 | `stage-9-ssh-deploy` | SSH deploy using username/password from Conjur via sshpass |
+| 10 | `stage-10-docker-registry` | Docker Hub login with username/password from Conjur |
 | 11 | `stage-11-audit-trail` | Conjur audit API — every secret access logged |
 
 ## Key files
@@ -27,7 +27,7 @@ The workflow (`main.yml`) contains 7 sequential stages, each teaching a specific
 | `action.yml` | GitHub Action definition — uses local `Dockerfile` |
 | `Dockerfile` | Container image built at runtime (runs as root) |
 | `entrypoint.sh` | Core logic: JWT auth, secret retrieval, masking |
-| `.github/workflows/main.yml` | Workshop pipeline with all 7 stages |
+| `.github/workflows/main.yml` | Workshop pipeline with all 11 stages |
 | `github-authn-jwt.yml` | Sample Conjur policy for JWT authenticator |
 | `github-app-id.yml` | Sample Conjur policy for app host identity |
 | `bin/policy/root.yml` | Combined root policy for local testing |
@@ -40,8 +40,7 @@ Set these under **Settings → Secrets and variables → Actions**:
 |--------|-------------|
 | `CONJUR_URL` | Conjur Cloud URL, e.g. `https://<tenant>.secretsmgr.cyberark.cloud/api` |
 | `CONJUR_SERVICE_ID` | JWT authenticator service ID, e.g. `github` |
-| `DB_ADDRESS_PLAIN` | Database host address (used in Stage 4 hardcoded demo) |
-| `DB_ADDRESS_PLAIN` | Database host address (used in Stage 4 hardcoded demo only) |
+| `DB_ADDRESS_PLAIN` | Database host address used only in Stage 4 hardcoded failure demo |
 
 ## Conjur secrets paths used in the workshop
 
@@ -55,9 +54,8 @@ Set these under **Settings → Secrets and variables → Actions**:
 | `data/vault/dev-demo-aslan/jumpserver/username` | Stage 9 (SSH deploy) |
 | `data/vault/dev-demo-aslan/jumpserver/password` | Stage 9 (SSH deploy) |
 | `data/vault/dev-demo-aslan/jumpserver/address` | Stage 9 (SSH deploy) |
-| `data/vault/devsecops/dockerhub_aslan/username` | Stage 10 (Docker) |
-| `data/vault/devsecops/dockerhub_aslan/password` | Stage 10 (Docker) |
-| `data/vault/devsecops/dockerhub_aslan/address` | Stage 10 (Docker registry host) |
+| `data/vault/devsecops/dockerhub_aslan/username` | Stage 10 (Docker Hub login) |
+| `data/vault/devsecops/dockerhub_aslan/password` | Stage 10 (Docker Hub login) |
 
 ## Important rules when editing this repo
 
