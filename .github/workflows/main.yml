@@ -114,11 +114,10 @@ jobs:
 
       - name: Query database using Conjur credentials
         run: |
-          PGPASSWORD=$DB_PASSWORD psql \
+          MYSQL_PWD=$DB_PASSWORD mysql \
             --host="$DB_ADDRESS" \
-            --username="$DB_USERNAME" \
-            --no-password \
-            --command="SELECT current_user, current_database(), now();"
+            --user="$DB_USERNAME" \
+            --execute="SELECT current_user(), database(), now();"
 
       - name: Clean Workspace
         uses: AutoModality/action-clean@v1.1.0
