@@ -8,48 +8,122 @@ on:
   workflow_dispatch:
 
 jobs:
-  authn-jwt:
+
+  # ============================================================
+  # STAGE 1 - JWT Authentication & Basic Secret Retrieval
+  # Demonstrates: how Conjur authenticates GitHub Actions via
+  # JWT and retrieves a single secret.
+  # ============================================================
+  stage-1-jwt-auth:
+    name: "Stage 1 - JWT Auth & Secret Retrieval"
     runs-on: self-hosted
     environment: dev
 
     permissions:
-      # kics-scan ignore-line
       id-token: 'write'
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v1
-      - name: Use CyberArk Conjur Secret Fetcher Action w/ GitHub JWT
+      - uses: actions/checkout@v3
+
+      - name: Retrieve secret from Conjur via JWT
         uses: ./
         with:
           url: ${{ secrets.CONJUR_URL }}
           account: conjur
           authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
-          secrets: data/vault/dev-demo-aslan/asramos_pcloud_pov/username|sql_username;data/vault/dev-demo-aslan/asramos_pcloud_pov/password|sql_password
-      - name: Check SQL_USERNAME Outside Docker Container for Secret Masking
-        run: printenv SQL_USERNAME | sed 's/./& /g'
-      - name: Check SQL_PASSWORD Outside Docker Container for Secret Masking
-        run: printenv SQL_PASSWORD | sed 's/./& /g'
+          secrets: data/vault/dev-demo-aslan/asramos_pcloud_pov/username|APP_USERNAME
+
+      - name: Show that secret is available (masked in logs)
+        run: |
+          echo "Secret retrieved successfully!"
+          echo "Value (masked): $APP_USERNAME"
+
       - name: Clean Workspace
         uses: AutoModality/action-clean@v1.1.0
 
-  # github-secrets:
-  #   runs-on: self-hosted
-  #   needs: authn-jwt
+  # ============================================================
+  # STAGE 2 - Multiple Secrets & Masking Demo
+  # Demonstrates: retrieving multiple secrets in one call and
+  # how GitHub Actions automatically masks values in the logs.
+  # ============================================================
+  stage-2-multiple-secrets:
+    name: "Stage 2 - Multiple Secrets & Masking"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-1-jwt-auth
 
-  #   steps:
-  #     - uses: actions/checkout@v1
-  #     - name: Use CyberArk Conjur Secret Fetcher Action w/ GitHub Secrets
-  #       uses: ./
-  #       with:
-  #         url: ${{ secrets.CONJUR_URL }}
-  #         account: conjur
-  #         host_id: ${{ secrets.CONJUR_USERNAME }}
-  #         api_key: ${{ secrets.CONJUR_API_KEY }}
-  #         secrets: data/vault/dev-demo-aslan/asramos_pcloud_pov/username|sql_username;data/vault/dev-demo-aslan/asramos_pcloud_pov/password|sql_password
-  #     - name: Check SQL_USERNAME Outside Docker Container for Secret Masking
-  #       run: printenv SQL_USERNAME | sed 's/./& /g'
-  #     - name: Check SQL_PASSWORD Outside Docker Container for Secret Masking
-  #       run: printenv SQL_PASSWORD | sed 's/./& /g'
-  #     - name: Clean Workspace
-  #       uses: AutoModality/action-clean@v1.1.0
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Retrieve multiple secrets from Conjur
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: >-
+            data/vault/dev-demo-aslan/asramos_pcloud_pov/username|APP_USERNAME;
+            data/vault/dev-demo-aslan/asramos_pcloud_pov/password|APP_PASSWORD
+
+      - name: "Masking demo: each character spaced out to confirm value was set"
+        run: |
+          echo "--- Username (spaced) ---"
+          printenv APP_USERNAME | sed 's/./& /g'
+          echo "--- Password (spaced) ---"
+          printenv APP_PASSWORD | sed 's/./& /g'
+
+      - name: "Masking demo: trying to echo directly (will be masked)"
+        run: |
+          echo "Username: $APP_USERNAME"
+          echo "Password: $APP_PASSWORD"
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  # ============================================================
+  # STAGE 3 - Database Credentials from Conjur
+  # Demonstrates: retrieving database credentials stored in
+  # Privilege Cloud via Conjur and connecting to the database.
+  # ============================================================
+  stage-3-database:
+    name: "Stage 3 - Database Connection with Conjur Credentials"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-2-multiple-secrets
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Retrieve database credentials from Conjur
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: >-
+            data/vault/dev-demo-aslan/dbuser_dual/username|DB_USERNAME;
+            data/vault/dev-demo-aslan/dbuser_dual/password|DB_PASSWORD;
+            data/vault/dev-demo-aslan/dbuser_dual/address|DB_ADDRESS
+
+      - name: Show database host (address is not a password, safe to print)
+        run: echo "Connecting to database at $DB_ADDRESS"
+
+      - name: Query database using Conjur credentials
+        run: |
+          PGPASSWORD=$DB_PASSWORD psql \
+            --host="$DB_ADDRESS" \
+            --username="$DB_USERNAME" \
+            --no-password \
+            --command="SELECT current_user, current_database(), now();"
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
