@@ -6,6 +6,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-05-21
+
+### Added
+- 7-stage workshop pipeline demonstrating Conjur + GitHub Actions integration
+  - Stage 1: JWT authentication and basic secret retrieval
+  - Stage 2: Multiple secrets with automatic log masking
+  - Stage 3: MySQL database connection using Privilege Cloud credentials
+  - Stage 4: Before/After — hardcoded credential failure vs Conjur
+  - Stage 5: Least privilege enforcement (authorized vs unauthorized access)
+  - Stage 6: End-to-end real MySQL query with Conjur credentials
+  - Stage 7: Credential rotation demo with zero pipeline changes
+- `CLAUDE.md` with project context, rules, and troubleshooting for AI-assisted development
+- `CONTRIBUTING.md` with development setup and PR guidelines
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/ISSUE_TEMPLATE/bug_report.md`
+- `.github/ISSUE_TEMPLATE/feature_request.md`
+- `workflow_dispatch` trigger to allow manual pipeline runs
+
+### Changed
+- Forked from `cyberark/conjur-action` and renamed to `workshop-action`
+- `action.yml` now uses local `Dockerfile` instead of published DockerHub image
+- Dockerfile no longer sets `USER 1001` — container runs as root for `GITHUB_ENV` write access
+- Upgraded `actions/checkout` from v3 to v4 (Node.js 24 compatible)
+- Workflow trigger branch changed from `master` to `main`
+- Rewrote `README.md` with full workshop setup guide, architecture diagram, and troubleshooting table
+- Updated `SECURITY.md` with security model and runner hardening guidance
+
+### Fixed
+- `GITHUB_ENV` permission denied error on self-hosted runners caused by container UID mismatch
+- Secret path parsing broken by YAML `>-` folding inserting spaces after semicolons
+
 ## [2.1.1] - 2026-03-23
 
 ### Fixed
