@@ -406,17 +406,15 @@ jobs:
         uses: AutoModality/action-clean@v1.1.0
 
   # ============================================================
-  # STAGE 9 - SSH Deploy with Key from Conjur
-  # Demonstrates: SSH private keys stored in Privilege Cloud,
-  # retrieved at runtime, used once and discarded — never
-  # persisted to disk after the session ends.
+  # STAGE 9 - SSH Deploy with Credentials from Conjur
+  # Demonstrates: server credentials (username, password,
+  # address) stored in Privilege Cloud, injected at runtime.
+  # The jumpserver account in PCloud holds these values.
   #
-  # Pre-requisite: store an SSH private key in Conjur at:
-  #   data/vault/dev-demo-aslan/workshop-ssh/private_key
-  # Add GitHub secrets: SSH_HOST, SSH_USER
+  # Conjur path: data/vault/dev-demo-aslan/jumpserver/
   # ============================================================
   stage-9-ssh-deploy:
-    name: "Stage 9 - SSH Deploy with Conjur Key"
+    name: "Stage 9 - SSH Deploy with Conjur Credentials"
     runs-on: self-hosted
     environment: dev
     needs: stage-8-promote-prod
@@ -428,24 +426,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Retrieve SSH private key from Conjur
+      - name: Retrieve SSH credentials from Conjur
         uses: ./
         with:
           url: ${{ secrets.CONJUR_URL }}
           account: conjur
           authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
-          secrets: data/vault/dev-demo-aslan/workshop-ssh/private_key|SSH_PRIVATE_KEY
+          secrets: "data/vault/dev-demo-aslan/jumpserver/username|SSH_USER_CONJUR;data/vault/dev-demo-aslan/jumpserver/password|SSH_PASSWORD;data/vault/dev-demo-aslan/jumpserver/address|SSH_HOST_CONJUR"
 
-      - name: Connect via SSH using key from Conjur
+      - name: Connect via SSH using credentials from Conjur
         run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/workshop_key
-          chmod 600 ~/.ssh/workshop_key
-          ssh -o StrictHostKeyChecking=no \
-              -i ~/.ssh/workshop_key \
-              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-              "echo 'Connected via SSH key from Conjur — host: $(hostname), date: $(date)'"
-          rm -f ~/.ssh/workshop_key
+          echo "Connecting to $SSH_HOST_CONJUR as $SSH_USER_CONJUR (password from Conjur)"
+          sshpass -p "$SSH_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=10 \
+            "$SSH_USER_CONJUR@$SSH_HOST_CONJUR" \
+            "echo 'Connected via credentials from Conjur — host: \$(hostname), date: \$(date)'"
 
       - name: Clean Workspace
         uses: AutoModality/action-clean@v1.1.0
@@ -453,13 +449,10 @@ jobs:
   # ============================================================
   # STAGE 10 - Docker Registry Login with Conjur Credentials
   # Demonstrates: registry credentials managed in Privilege
-  # Cloud, injected into the pipeline without ever appearing
-  # in the workflow file or on the runner filesystem.
+  # Cloud, including the registry address — no GitHub secrets
+  # needed. Uses dockerhub_aslan account from PCloud.
   #
-  # Pre-requisite: store Docker registry credentials in Conjur:
-  #   data/vault/dev-demo-aslan/docker-registry/username
-  #   data/vault/dev-demo-aslan/docker-registry/password
-  # Add GitHub secret: DOCKER_REGISTRY (e.g. registry.example.com)
+  # Conjur path: data/vault/devsecops/dockerhub_aslan/
   # ============================================================
   stage-10-docker-registry:
     name: "Stage 10 - Docker Registry Login with Conjur"
@@ -474,29 +467,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Retrieve Docker registry credentials from Conjur
+      - name: Retrieve Docker Hub credentials from Conjur
         uses: ./
         with:
           url: ${{ secrets.CONJUR_URL }}
           account: conjur
           authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
-          secrets: "data/vault/dev-demo-aslan/docker-registry/username|REGISTRY_USERNAME;data/vault/dev-demo-aslan/docker-registry/password|REGISTRY_PASSWORD"
+          secrets: "data/vault/devsecops/dockerhub_aslan/username|REGISTRY_USERNAME;data/vault/devsecops/dockerhub_aslan/password|REGISTRY_PASSWORD;data/vault/devsecops/dockerhub_aslan/address|REGISTRY_HOST"
 
       - name: Login to Docker registry using Conjur credentials
         run: |
-          echo "$REGISTRY_PASSWORD" | docker login "${{ secrets.DOCKER_REGISTRY }}" \
+          echo "Logging in to $REGISTRY_HOST as $REGISTRY_USERNAME (credentials from Conjur)"
+          echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY_HOST" \
             --username "$REGISTRY_USERNAME" \
             --password-stdin
-          echo "Docker login successful — credentials came from Conjur!"
+          echo "Docker login successful — credentials came from Conjur, not from GitHub Secrets!"
 
-      - name: Pull image from private registry
+      - name: Pull image from registry
         run: |
-          docker pull "${{ secrets.DOCKER_REGISTRY }}/workshop-demo:latest" \
+          docker pull "$REGISTRY_HOST/workshop-demo:latest" \
           || echo "Image not found — but login with Conjur credentials succeeded."
 
       - name: Logout from registry
         if: always()
-        run: docker logout "${{ secrets.DOCKER_REGISTRY }}"
+        run: docker logout "$REGISTRY_HOST"
 
       - name: Clean Workspace
         uses: AutoModality/action-clean@v1.1.0

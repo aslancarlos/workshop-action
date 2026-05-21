@@ -41,19 +41,23 @@ Set these under **Settings → Secrets and variables → Actions**:
 | `CONJUR_URL` | Conjur Cloud URL, e.g. `https://<tenant>.secretsmgr.cyberark.cloud/api` |
 | `CONJUR_SERVICE_ID` | JWT authenticator service ID, e.g. `github` |
 | `DB_ADDRESS_PLAIN` | Database host address (used in Stage 4 hardcoded demo) |
-| `SSH_HOST` | Target server for SSH deploy (Stage 9) |
-| `SSH_USER` | SSH username for remote connection (Stage 9) |
-| `DOCKER_REGISTRY` | Docker registry hostname, e.g. `registry.example.com` (Stage 10) |
+| `DB_ADDRESS_PLAIN` | Database host address (used in Stage 4 hardcoded demo only) |
 
 ## Conjur secrets paths used in the workshop
 
 | Path | Used in |
 |------|---------|
-| `data/vault/dev-demo-aslan/asramos_pcloud_pov/username` | Stages 1, 2, 5 |
-| `data/vault/dev-demo-aslan/asramos_pcloud_pov/password` | Stage 2 |
-| `data/vault/dev-demo-aslan/dbuser_dual/username` | Stages 3, 4, 6, 7 |
-| `data/vault/dev-demo-aslan/dbuser_dual/password` | Stages 3, 4, 6, 7 |
+| `data/vault/dev-demo-aslan/asramos_pcloud_pov/username` | Stages 1, 2, 5, 8a, 8b |
+| `data/vault/dev-demo-aslan/asramos_pcloud_pov/password` | Stages 2, 8a, 8b |
+| `data/vault/dev-demo-aslan/dbuser_dual/username` | Stages 3, 4, 6, 7, 8c |
+| `data/vault/dev-demo-aslan/dbuser_dual/password` | Stages 3, 4, 6, 7, 8c |
 | `data/vault/dev-demo-aslan/dbuser_dual/address` | Stages 3, 4, 6, 7 |
+| `data/vault/dev-demo-aslan/jumpserver/username` | Stage 9 (SSH deploy) |
+| `data/vault/dev-demo-aslan/jumpserver/password` | Stage 9 (SSH deploy) |
+| `data/vault/dev-demo-aslan/jumpserver/address` | Stage 9 (SSH deploy) |
+| `data/vault/devsecops/dockerhub_aslan/username` | Stage 10 (Docker) |
+| `data/vault/devsecops/dockerhub_aslan/password` | Stage 10 (Docker) |
+| `data/vault/devsecops/dockerhub_aslan/address` | Stage 10 (Docker registry host) |
 
 ## Important rules when editing this repo
 
