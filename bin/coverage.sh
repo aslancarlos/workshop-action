@@ -10,9 +10,9 @@ mkdir -p "$OUTPUT_DIR"
 docker build -f Dockerfile.test -t unit-test .
 
 docker run --rm \
-  -v "$OUTPUT_DIR:/conjur-action/coverage" \
+  -v "$OUTPUT_DIR:/workshop-action/coverage" \
   unit-test \
   bash -c "\
     bashcov --root . -- test/entrypoint_test.sh && \
-    ruby -r '/conjur-action/test/test_helper.rb' && \
-    ./bin/generate_junit_report.sh > /conjur-action/coverage/junit.xml"
+    ruby -r '/workshop-action/test/test_helper.rb' && \
+    ./bin/generate_junit_report.sh > /workshop-action/coverage/junit.xml"

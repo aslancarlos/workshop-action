@@ -1,4 +1,4 @@
-# CyberArk Conjur Secret Fetcher
+# Workshop Action
 
 GitHub Action for secure secrets delivery to your workflow test environment using CyberArk Conjur.
 
@@ -253,7 +253,7 @@ conjur variable set -i conjur/authn-jwt/github/identity-path -v "/github-apps"
         - !host
           id: release
           annotations:
-              authn-jwt/github/repository: my-repo/conjur-action
+              authn-jwt/github/repository: my-repo/workshop-action
               authn-jwt/github/workflow: release
 
       - !grant

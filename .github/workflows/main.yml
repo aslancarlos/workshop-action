@@ -1,4 +1,4 @@
-name: conjur-action
+name: workshop-action
 
 on:
   push:
