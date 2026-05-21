@@ -1,40 +1,95 @@
 # Contributing
 
-[Are you accepting contributions at this time? If not, please state that here.
-No need to include content from the rest of this document.]
-
-For general contribution and community guidelines, please see the [community repo](https://github.com/cyberark/community).
+Contributions are welcome. Please read this guide before opening a pull request.
 
 ## Table of Contents
 
-- [Development](#development)
+- [Development Setup](#development-setup)
+- [Making Changes](#making-changes)
 - [Testing](#testing)
-- [Releases](#releases)
-- [Contributing](#contributing-workflow)
+- [Workflow Stages](#workflow-stages)
+- [Pull Request Guidelines](#pull-request-guidelines)
 
-## Development
+## Development Setup
 
-TODO:
-[What development tools are required to start working on this project?]
+Requirements:
+- Docker
+- `git`
+- MySQL client (for local stage testing)
+- Access to a Conjur Cloud tenant (or run locally with `bin/start.sh`)
+
+Clone the repo:
+
+```bash
+git clone https://github.com/aslancarlos/workshop-action.git
+cd workshop-action
+```
+
+## Making Changes
+
+### Action logic (`entrypoint.sh`)
+
+The entrypoint handles three flows:
+1. **JWT authentication** (`authn_id` is set)
+2. **API key authentication** (`host_id` + `api_key` are set)
+3. **Token file** (`authn_token_file` is set)
+
+After authentication, it retrieves each secret via the Conjur REST API and sets it as a masked environment variable via `GITHUB_ENV`.
+
+Key rules:
+- The container runs as root — do not add `USER` directive to the Dockerfile
+- Never use YAML `>-` folding for the `secrets:` action input
+- The `account` for Conjur Cloud is always `conjur`
+- Do not change `cyberark/conjur-action@v3` or `docker://cyberark/conjur-action:*` references — these point to the upstream published action
+
+### Workshop stages (`.github/workflows/main.yml`)
+
+Each stage is a separate job with `needs:` chaining. When adding or editing a stage:
+- Keep the comment block above each job explaining what it demonstrates
+- Use `actions/checkout@v4` (v3 is deprecated)
+- Always end stages with `AutoModality/action-clean@v1.1.0`
+- Use `continue-on-error: true` only for intentional failure demonstrations (Stage 5)
 
 ## Testing
 
-TODO:
-[Instructions for running the test suite]
+### Unit tests
 
-## Releases
+```bash
+bin/coverage.sh
+```
 
-TODO:
-[Instructions for creating a new release]
+### Local integration test (Conjur OSS)
 
-## Contributing workflow
+```bash
+cd bin
+./start.sh
+```
 
-1. [Fork the project](https://help.github.com/en/github/getting-started-with-github/fork-a-repo)
-2. [Clone your fork](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository)
-3. Make local changes to your fork by editing files
-3. [Commit your changes](https://help.github.com/en/github/managing-files-in-a-repository/adding-a-file-to-a-repository-using-the-command-line)
-4. [Push your local changes to the remote server](https://help.github.com/en/github/using-git/pushing-commits-to-a-remote-repository)
-5. [Create new Pull Request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
+### Local integration test (Conjur Enterprise)
 
-From here your pull request will be reviewed and once you've responded to all
-feedback it will be merged into the project. Congratulations, you're a contributor!
+```bash
+cd bin
+./start.sh -e
+```
+
+## Workflow Stages
+
+The pipeline has 7 stages. Do not reorder them — each one builds on the previous conceptually:
+
+| Stage | Job | Teaches |
+|-------|-----|---------|
+| 1 | `stage-1-jwt-auth` | JWT auth, no stored credentials |
+| 2 | `stage-2-multiple-secrets` | Multiple secrets, log masking |
+| 3 | `stage-3-database` | DB credentials from Privilege Cloud |
+| 4 | `stage-4-before-after` | Risk of hardcoded credentials |
+| 5 | `stage-5-least-privilege` | Least privilege enforcement |
+| 6 | `stage-6-real-query` | End-to-end with real MySQL query |
+| 7 | `stage-7-rotation` | Rotation without pipeline changes |
+
+## Pull Request Guidelines
+
+1. Fork the repository and create a branch from `main`
+2. Keep changes focused — one concept per PR
+3. Update `CHANGELOG.md` under `[Unreleased]`
+4. Ensure the workflow still runs end-to-end before requesting review
+5. Do not commit secrets, `.env` files, or access tokens
