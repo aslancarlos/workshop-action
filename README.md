@@ -55,6 +55,18 @@ Full end-to-end demo: Conjur delivers DB credentials → MySQL query runs → re
 ### Stage 7 — Credential Rotation
 Connects to the database using the current Conjur credentials and prompts the presenter to rotate the password in Privilege Cloud. Re-running the pipeline with zero changes shows the new password works automatically.
 
+### Stage 8 — Environment Promotion (dev → staging → prod)
+Three sub-stages chained with `needs:`. Each runs in a different GitHub Environment with its own secrets. The `prod` job pauses and waits for a human reviewer to approve before running — demonstrating governance over production deployments. Requires `staging` and `prod` GitHub Environments to be created under Settings → Environments, with at least one Required Reviewer on `prod`.
+
+### Stage 9 — SSH Deploy with Key from Conjur
+Retrieves an SSH private key stored in Privilege Cloud, writes it to a temp file with `chmod 600`, connects to a remote server, runs a command, and immediately deletes the key file. The key is never committed to the repo or stored on the runner permanently.
+
+### Stage 10 — Docker Registry Login with Conjur Credentials
+Fetches Docker registry `username` and `password` from Conjur, performs `docker login` with `--password-stdin` (no credential in the command line), pulls an image from the private registry, and logs out. Demonstrates credential injection into container workflows.
+
+### Stage 11 — Audit Trail
+Authenticates with Conjur directly via the JWT and calls the Conjur audit API to retrieve the last 20 secret fetch events. Displays who accessed what and when — showing the full traceability that Conjur provides for compliance and incident response.
+
 ---
 
 ## Prerequisites
@@ -120,6 +132,9 @@ Go to **Settings → Secrets and variables → Actions** and add:
 | `CONJUR_URL` | `https://<tenant>.secretsmgr.cyberark.cloud/api` |
 | `CONJUR_SERVICE_ID` | JWT authenticator ID (e.g. `github`) |
 | `DB_ADDRESS_PLAIN` | Database host address (for Stage 4 hardcoded demo) |
+| `SSH_HOST` | Target server hostname or IP for SSH deploy (Stage 9) |
+| `SSH_USER` | SSH username for the remote connection (Stage 9) |
+| `DOCKER_REGISTRY` | Docker registry hostname, e.g. `registry.example.com` (Stage 10) |
 
 ### 4. Ensure the Self-Hosted Runner Has MySQL Client
 

@@ -304,3 +304,270 @@ jobs:
 
       - name: Clean Workspace
         uses: AutoModality/action-clean@v1.1.0
+
+  # ============================================================
+  # STAGE 8 - Environment Promotion (dev → staging → prod)
+  # Demonstrates: the same pipeline promotes through environments
+  # automatically. Each environment fetches its own secrets from
+  # Conjur. The prod job pauses for human approval.
+  #
+  # Pre-requisite: create GitHub Environments "staging" and
+  # "prod" under Settings → Environments. On "prod", add at
+  # least one Required Reviewer to enable the approval gate.
+  # ============================================================
+  stage-8-promote-dev:
+    name: "Stage 8a - Promote: dev"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-7-rotation
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Retrieve dev secrets from Conjur
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: "data/vault/dev-demo-aslan/asramos_pcloud_pov/username|APP_USERNAME;data/vault/dev-demo-aslan/asramos_pcloud_pov/password|APP_PASSWORD"
+
+      - name: Simulate deployment to dev
+        run: |
+          echo "=== Deploying to DEV ==="
+          echo "Authenticated as: $APP_USERNAME"
+          echo "DEV deployment complete."
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  stage-8-promote-staging:
+    name: "Stage 8b - Promote: staging"
+    runs-on: self-hosted
+    environment: staging
+    needs: stage-8-promote-dev
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Retrieve staging secrets from Conjur
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: "data/vault/dev-demo-aslan/asramos_pcloud_pov/username|APP_USERNAME;data/vault/dev-demo-aslan/asramos_pcloud_pov/password|APP_PASSWORD"
+
+      - name: Simulate deployment to staging
+        run: |
+          echo "=== Deploying to STAGING ==="
+          echo "Authenticated as: $APP_USERNAME"
+          echo "STAGING deployment complete."
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  stage-8-promote-prod:
+    name: "Stage 8c - Promote: prod (requires approval)"
+    runs-on: self-hosted
+    environment: prod
+    needs: stage-8-promote-staging
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Retrieve prod secrets from Conjur
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: "data/vault/dev-demo-aslan/dbuser_dual/username|APP_USERNAME;data/vault/dev-demo-aslan/dbuser_dual/password|APP_PASSWORD"
+
+      - name: Simulate deployment to prod
+        run: |
+          echo "=== Deploying to PRODUCTION ==="
+          echo "Authenticated as: $APP_USERNAME"
+          echo "PRODUCTION deployment complete."
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  # ============================================================
+  # STAGE 9 - SSH Deploy with Key from Conjur
+  # Demonstrates: SSH private keys stored in Privilege Cloud,
+  # retrieved at runtime, used once and discarded — never
+  # persisted to disk after the session ends.
+  #
+  # Pre-requisite: store an SSH private key in Conjur at:
+  #   data/vault/dev-demo-aslan/workshop-ssh/private_key
+  # Add GitHub secrets: SSH_HOST, SSH_USER
+  # ============================================================
+  stage-9-ssh-deploy:
+    name: "Stage 9 - SSH Deploy with Conjur Key"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-8-promote-prod
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Retrieve SSH private key from Conjur
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: data/vault/dev-demo-aslan/workshop-ssh/private_key|SSH_PRIVATE_KEY
+
+      - name: Connect via SSH using key from Conjur
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/workshop_key
+          chmod 600 ~/.ssh/workshop_key
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/workshop_key \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+              "echo 'Connected via SSH key from Conjur — host: $(hostname), date: $(date)'"
+          rm -f ~/.ssh/workshop_key
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  # ============================================================
+  # STAGE 10 - Docker Registry Login with Conjur Credentials
+  # Demonstrates: registry credentials managed in Privilege
+  # Cloud, injected into the pipeline without ever appearing
+  # in the workflow file or on the runner filesystem.
+  #
+  # Pre-requisite: store Docker registry credentials in Conjur:
+  #   data/vault/dev-demo-aslan/docker-registry/username
+  #   data/vault/dev-demo-aslan/docker-registry/password
+  # Add GitHub secret: DOCKER_REGISTRY (e.g. registry.example.com)
+  # ============================================================
+  stage-10-docker-registry:
+    name: "Stage 10 - Docker Registry Login with Conjur"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-9-ssh-deploy
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Retrieve Docker registry credentials from Conjur
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: "data/vault/dev-demo-aslan/docker-registry/username|REGISTRY_USERNAME;data/vault/dev-demo-aslan/docker-registry/password|REGISTRY_PASSWORD"
+
+      - name: Login to Docker registry using Conjur credentials
+        run: |
+          echo "$REGISTRY_PASSWORD" | docker login "${{ secrets.DOCKER_REGISTRY }}" \
+            --username "$REGISTRY_USERNAME" \
+            --password-stdin
+          echo "Docker login successful — credentials came from Conjur!"
+
+      - name: Pull image from private registry
+        run: |
+          docker pull "${{ secrets.DOCKER_REGISTRY }}/workshop-demo:latest" \
+          || echo "Image not found — but login with Conjur credentials succeeded."
+
+      - name: Logout from registry
+        if: always()
+        run: docker logout "${{ secrets.DOCKER_REGISTRY }}"
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  # ============================================================
+  # STAGE 11 - Audit Trail
+  # Demonstrates: every secret access is logged automatically
+  # in Conjur. This job queries the Conjur audit API to show
+  # who accessed what and when — full traceability for compliance.
+  #
+  # Pre-requisite: the Conjur host must have read permission on
+  # audit events (contact your Conjur admin to grant auditor role).
+  # ============================================================
+  stage-11-audit-trail:
+    name: "Stage 11 - Audit Trail"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-10-docker-registry
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate with Conjur to obtain session token
+        run: |
+          JWT_TOKEN=$(curl -s \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r .value)
+
+          SESSION_TOKEN=$(curl -s \
+            --request POST \
+            "${{ secrets.CONJUR_URL }}/authn-jwt/${{ secrets.CONJUR_SERVICE_ID }}/conjur/authenticate" \
+            --header "Content-Type: application/x-www-form-urlencoded" \
+            --header "Accept-Encoding: base64" \
+            --data-urlencode "jwt=$JWT_TOKEN")
+
+          echo "CONJUR_SESSION_TOKEN=$SESSION_TOKEN" >> $GITHUB_ENV
+
+      - name: Query Conjur audit log (last 20 fetch events)
+        run: |
+          echo "=== Conjur Audit Log — Secret Fetch Events ==="
+          curl -s \
+            -H "Authorization: Token token=\"$CONJUR_SESSION_TOKEN\"" \
+            "${{ secrets.CONJUR_URL }}/audit?limit=20&kind=fetch" \
+          | jq -r '.[] | "[\(.timestamp)] \(.subject.role) fetched \(.resource.id)"' \
+          || echo "Note: audit access requires the host to have auditor permissions in Conjur."
+
+      - name: Workshop summary
+        run: |
+          echo ""
+          echo "============================================"
+          echo "  Workshop Complete — 11 Stages Executed"
+          echo "============================================"
+          echo ""
+          echo "What was demonstrated:"
+          echo "  1. JWT auth — no stored credentials"
+          echo "  2. Multiple secrets + log masking"
+          echo "  3. Database connection (MySQL)"
+          echo "  4. Hardcoded credentials vs Conjur"
+          echo "  5. Least privilege enforcement"
+          echo "  6. Real database query end-to-end"
+          echo "  7. Credential rotation"
+          echo "  8. Environment promotion (dev→staging→prod)"
+          echo "  9. SSH deploy with key from Conjur"
+          echo " 10. Docker registry login from Conjur"
+          echo " 11. Audit trail — every access logged"
+          echo ""
+          echo "Zero credentials stored in this repository."
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
