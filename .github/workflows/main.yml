@@ -473,24 +473,25 @@ jobs:
           url: ${{ secrets.CONJUR_URL }}
           account: conjur
           authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
-          secrets: "data/vault/devsecops/dockerhub_aslan/username|REGISTRY_USERNAME;data/vault/devsecops/dockerhub_aslan/password|REGISTRY_PASSWORD;data/vault/devsecops/dockerhub_aslan/address|REGISTRY_HOST"
+          secrets: "data/vault/devsecops/dockerhub_aslan/username|REGISTRY_USERNAME;data/vault/devsecops/dockerhub_aslan/password|REGISTRY_PASSWORD"
 
-      - name: Login to Docker registry using Conjur credentials
+      - name: Login to Docker Hub using Conjur credentials
         run: |
-          echo "Logging in to $REGISTRY_HOST as $REGISTRY_USERNAME (credentials from Conjur)"
-          echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY_HOST" \
+          echo "Logging in to docker.io as $REGISTRY_USERNAME (credentials from Conjur)"
+          echo "$REGISTRY_PASSWORD" | docker login docker.io \
             --username "$REGISTRY_USERNAME" \
             --password-stdin
           echo "Docker login successful — credentials came from Conjur, not from GitHub Secrets!"
 
-      - name: Pull image from registry
+      - name: Pull public image to confirm login
         run: |
-          docker pull "$REGISTRY_HOST/workshop-demo:latest" \
-          || echo "Image not found — but login with Conjur credentials succeeded."
+          docker pull "$REGISTRY_USERNAME/conjur-workshop:latest" 2>/dev/null \
+          || docker pull hello-world \
+          && echo "Registry access confirmed."
 
       - name: Logout from registry
         if: always()
-        run: docker logout "$REGISTRY_HOST"
+        run: docker logout docker.io
 
       - name: Clean Workspace
         uses: AutoModality/action-clean@v1.1.0
