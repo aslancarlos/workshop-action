@@ -132,9 +132,7 @@ Go to **Settings → Secrets and variables → Actions** and add:
 | `CONJUR_URL` | `https://<tenant>.secretsmgr.cyberark.cloud/api` |
 | `CONJUR_SERVICE_ID` | JWT authenticator ID (e.g. `github`) |
 | `DB_ADDRESS_PLAIN` | Database host address (for Stage 4 hardcoded demo) |
-| `SSH_HOST` | Target server hostname or IP for SSH deploy (Stage 9) |
-| `SSH_USER` | SSH username for the remote connection (Stage 9) |
-| `DOCKER_REGISTRY` | Docker registry hostname, e.g. `registry.example.com` (Stage 10) |
+| `DB_ADDRESS_PLAIN` | Database host address for Stage 4 hardcoded failure demo |
 
 ### 4. Ensure the Self-Hosted Runner Has MySQL Client
 
