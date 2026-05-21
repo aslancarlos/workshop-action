@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Stage 5: Least privilege enforcement (authorized vs unauthorized access)
   - Stage 6: End-to-end real MySQL query with Conjur credentials
   - Stage 7: Credential rotation demo with zero pipeline changes
+  - Stage 8: Environment promotion (dev → staging → prod) with approval gate on prod
+  - Stage 9: SSH deploy using private key retrieved from Conjur
+  - Stage 10: Docker registry login using credentials from Conjur
+  - Stage 11: Audit trail — queries Conjur API to show every secret access logged
 - `CLAUDE.md` with project context, rules, and troubleshooting for AI-assisted development
 - `CONTRIBUTING.md` with development setup and PR guidelines
 - `.github/PULL_REQUEST_TEMPLATE.md`

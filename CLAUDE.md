@@ -15,6 +15,10 @@ The workflow (`main.yml`) contains 7 sequential stages, each teaching a specific
 | 5 | `stage-5-least-privilege` | Authorized access succeeds; unauthorized is denied |
 | 6 | `stage-6-real-query` | End-to-end: Conjur credentials → real MySQL query |
 | 7 | `stage-7-rotation` | Credential rotation without pipeline changes |
+| 8 | `stage-8-promote-dev/staging/prod` | Environment promotion dev→staging→prod with approval gate on prod |
+| 9 | `stage-9-ssh-deploy` | SSH private key from Conjur used for remote deploy |
+| 10 | `stage-10-docker-registry` | Docker registry login with Conjur credentials |
+| 11 | `stage-11-audit-trail` | Conjur audit API — every secret access logged |
 
 ## Key files
 
@@ -37,6 +41,9 @@ Set these under **Settings → Secrets and variables → Actions**:
 | `CONJUR_URL` | Conjur Cloud URL, e.g. `https://<tenant>.secretsmgr.cyberark.cloud/api` |
 | `CONJUR_SERVICE_ID` | JWT authenticator service ID, e.g. `github` |
 | `DB_ADDRESS_PLAIN` | Database host address (used in Stage 4 hardcoded demo) |
+| `SSH_HOST` | Target server for SSH deploy (Stage 9) |
+| `SSH_USER` | SSH username for remote connection (Stage 9) |
+| `DOCKER_REGISTRY` | Docker registry hostname, e.g. `registry.example.com` (Stage 10) |
 
 ## Conjur secrets paths used in the workshop
 
