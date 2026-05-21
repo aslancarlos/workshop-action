@@ -24,7 +24,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Retrieve secret from Conjur via JWT
         uses: ./
@@ -58,7 +58,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Retrieve multiple secrets from Conjur
         uses: ./
@@ -99,7 +99,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Retrieve database credentials from Conjur
         uses: ./
@@ -138,7 +138,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: "BAD PRACTICE: hardcoded credential (connection will fail)"
         run: |
@@ -185,7 +185,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: "Retrieve authorized secret (should succeed)"
         uses: ./
@@ -236,7 +236,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Retrieve database credentials from Conjur
         uses: ./
@@ -281,7 +281,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Retrieve credentials from Conjur (run 1)
         uses: ./
