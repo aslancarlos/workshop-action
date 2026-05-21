@@ -12,7 +12,7 @@ jobs:
   # ============================================================
   # STAGE 1 - JWT Authentication & Basic Secret Retrieval
   # Demonstrates: how Conjur authenticates GitHub Actions via
-  # JWT and retrieves a single secret.
+  # JWT (no stored credentials) and retrieves a secret.
   # ============================================================
   stage-1-jwt-auth:
     name: "Stage 1 - JWT Auth & Secret Retrieval"
@@ -109,7 +109,7 @@ jobs:
           authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
           secrets: "data/vault/dev-demo-aslan/dbuser_dual/username|DB_USERNAME;data/vault/dev-demo-aslan/dbuser_dual/password|DB_PASSWORD;data/vault/dev-demo-aslan/dbuser_dual/address|DB_ADDRESS"
 
-      - name: Show database host (address is not a password, safe to print)
+      - name: Show database host (address is not a secret, safe to print)
         run: echo "Connecting to database at $DB_ADDRESS"
 
       - name: Query database using Conjur credentials
@@ -118,6 +118,189 @@ jobs:
             --host="$DB_ADDRESS" \
             --user="$DB_USERNAME" \
             --execute="SELECT current_user(), database(), now();"
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  # ============================================================
+  # STAGE 4 - Hardcoded vs Conjur (Before / After)
+  # Demonstrates: the risk of hardcoded credentials failing
+  # versus Conjur delivering the correct secret dynamically.
+  # ============================================================
+  stage-4-before-after:
+    name: "Stage 4 - Hardcoded vs Conjur"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-3-database
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "BAD PRACTICE: hardcoded credential (connection will fail)"
+        run: |
+          echo ">>> Trying to connect with a hardcoded password..."
+          MYSQL_PWD="SuperSecret123!" mysql \
+            --host="${{ secrets.DB_ADDRESS_PLAIN }}" \
+            --user="app_user" \
+            --connect-timeout=5 \
+            --execute="SELECT 'connected!' AS status;" \
+          || echo "Connection FAILED — hardcoded credentials are wrong or rotated!"
+
+      - name: Retrieve fresh credentials from Conjur
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: "data/vault/dev-demo-aslan/dbuser_dual/username|DB_USERNAME;data/vault/dev-demo-aslan/dbuser_dual/password|DB_PASSWORD;data/vault/dev-demo-aslan/dbuser_dual/address|DB_ADDRESS"
+
+      - name: "GOOD PRACTICE: connect with Conjur credentials (always up-to-date)"
+        run: |
+          echo ">>> Connecting with credentials from Conjur..."
+          MYSQL_PWD=$DB_PASSWORD mysql \
+            --host="$DB_ADDRESS" \
+            --user="$DB_USERNAME" \
+            --execute="SELECT 'connected!' AS status;"
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  # ============================================================
+  # STAGE 5 - Least Privilege / Access Denied
+  # Demonstrates: the host only has access to what is explicitly
+  # permitted in Conjur policy — unauthorized access is denied.
+  # ============================================================
+  stage-5-least-privilege:
+    name: "Stage 5 - Least Privilege & Access Denied"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-4-before-after
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Retrieve authorized secret (should succeed)"
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: data/vault/dev-demo-aslan/asramos_pcloud_pov/username|APP_USERNAME
+
+      - name: "Authorized access confirmed"
+        run: echo "Authorized secret retrieved successfully."
+
+      - name: "Attempt to access an unauthorized secret (should fail)"
+        id: unauthorized
+        continue-on-error: true
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: data/vault/unauthorized-safe/secret|FORBIDDEN_SECRET
+
+      - name: "Confirm access was denied"
+        run: |
+          if [ "${{ steps.unauthorized.outcome }}" == "failure" ]; then
+            echo "Access DENIED by Conjur — least privilege working as expected!"
+          else
+            echo "WARNING: access was not denied. Review Conjur policy."
+            exit 1
+          fi
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  # ============================================================
+  # STAGE 6 - Real Query & Data Retrieval
+  # Demonstrates: end-to-end flow — Conjur delivers credentials,
+  # application uses them to query real data from the database.
+  # ============================================================
+  stage-6-real-query:
+    name: "Stage 6 - Real Query & Data Retrieval"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-5-least-privilege
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Retrieve database credentials from Conjur
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: "data/vault/dev-demo-aslan/dbuser_dual/username|DB_USERNAME;data/vault/dev-demo-aslan/dbuser_dual/password|DB_PASSWORD;data/vault/dev-demo-aslan/dbuser_dual/address|DB_ADDRESS"
+
+      - name: Run real query and display results
+        run: |
+          echo "=== Database Server Info ==="
+          MYSQL_PWD=$DB_PASSWORD mysql \
+            --host="$DB_ADDRESS" \
+            --user="$DB_USERNAME" \
+            --execute="SELECT @@version AS mysql_version, @@hostname AS host;"
+
+          echo ""
+          echo "=== Current Session Info ==="
+          MYSQL_PWD=$DB_PASSWORD mysql \
+            --host="$DB_ADDRESS" \
+            --user="$DB_USERNAME" \
+            --execute="SELECT current_user() AS logged_in_as, now() AS query_time;"
+
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+  # ============================================================
+  # STAGE 7 - Credential Rotation (Zero Pipeline Changes)
+  # Demonstrates: Conjur always delivers the current password
+  # from Privilege Cloud. After a rotation, this pipeline runs
+  # unchanged and still connects — no secret stored in the repo.
+  # ============================================================
+  stage-7-rotation:
+    name: "Stage 7 - Credential Rotation Demo"
+    runs-on: self-hosted
+    environment: dev
+    needs: stage-6-real-query
+
+    permissions:
+      id-token: 'write'
+      contents: 'read'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Retrieve credentials from Conjur (run 1)
+        uses: ./
+        with:
+          url: ${{ secrets.CONJUR_URL }}
+          account: conjur
+          authn_id: ${{ secrets.CONJUR_SERVICE_ID }}
+          secrets: "data/vault/dev-demo-aslan/dbuser_dual/username|DB_USERNAME;data/vault/dev-demo-aslan/dbuser_dual/password|DB_PASSWORD;data/vault/dev-demo-aslan/dbuser_dual/address|DB_ADDRESS"
+
+      - name: Connect to database (run 1 — current password)
+        run: |
+          echo "=== Run 1: connecting with current Conjur credentials ==="
+          MYSQL_PWD=$DB_PASSWORD mysql \
+            --host="$DB_ADDRESS" \
+            --user="$DB_USERNAME" \
+            --execute="SELECT 'Run 1 OK' AS result, now() AS timestamp;"
+          echo ""
+          echo "--- Rotate the password in Privilege Cloud now and re-run ---"
+          echo "--- This pipeline needs zero changes to keep working      ---"
 
       - name: Clean Workspace
         uses: AutoModality/action-clean@v1.1.0
