@@ -11,12 +11,7 @@ COPY entrypoint.sh /conjur-action/entrypoint.sh
 
 COPY CHANGELOG.md /conjur-action/CHANGELOG.md
 
-RUN chown -R 1001:0 /conjur-action \
-	&& chmod -R g=u /conjur-action \
-	&& chmod ug+x /conjur-action/entrypoint.sh \
-	&& chmod a-w /conjur-action/entrypoint.sh /conjur-action/CHANGELOG.md
-
-USER 1001
+RUN chmod +x /conjur-action/entrypoint.sh
 
 WORKDIR /conjur-action
 
