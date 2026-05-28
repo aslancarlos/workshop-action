@@ -40,7 +40,7 @@ jobs:
           echo "Value (masked): $APP_USERNAME"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 2 - Multiple Secrets & Masking Demo
@@ -81,7 +81,7 @@ jobs:
           echo "Password: $APP_PASSWORD"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 3 - Database Credentials from Conjur
@@ -120,7 +120,7 @@ jobs:
             --execute="SELECT current_user(), database(), now();"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 4 - Hardcoded vs Conjur (Before / After)
@@ -167,7 +167,7 @@ jobs:
             --execute="SELECT 'connected!' AS status;"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 5 - Least Privilege / Access Denied
@@ -218,7 +218,7 @@ jobs:
           fi
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 6 - Real Query & Data Retrieval
@@ -262,7 +262,7 @@ jobs:
             --execute="SELECT current_user() AS logged_in_as, now() AS query_time;"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 7 - Credential Rotation (Zero Pipeline Changes)
@@ -303,7 +303,7 @@ jobs:
           echo "--- This pipeline needs zero changes to keep working      ---"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 8 - Environment Promotion (dev → staging → prod)
@@ -343,7 +343,7 @@ jobs:
           echo "DEV deployment complete."
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   stage-8-promote-staging:
     name: "Stage 8b - Promote: staging"
@@ -373,7 +373,7 @@ jobs:
           echo "STAGING deployment complete."
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   stage-8-promote-prod:
     name: "Stage 8c - Promote: prod (requires approval)"
@@ -403,7 +403,7 @@ jobs:
           echo "PRODUCTION deployment complete."
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 9 - SSH Deploy with Credentials from Conjur
@@ -444,7 +444,7 @@ jobs:
             "echo 'Connected via credentials from Conjur — host: \$(hostname), date: \$(date)'"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 10 - Docker Registry Login with Conjur Credentials
@@ -494,7 +494,7 @@ jobs:
         run: docker logout docker.io
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 11 - Audit Trail
@@ -565,4 +565,4 @@ jobs:
           echo "Zero credentials stored in this repository."
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
