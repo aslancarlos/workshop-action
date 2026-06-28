@@ -24,7 +24,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve secret from Conjur via JWT
         uses: ./
@@ -40,7 +40,7 @@ jobs:
           echo "Value (masked): $APP_USERNAME"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 2 - Multiple Secrets & Masking Demo
@@ -58,7 +58,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve multiple secrets from Conjur
         uses: ./
@@ -81,7 +81,7 @@ jobs:
           echo "Password: $APP_PASSWORD"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 3 - Database Credentials from Conjur
@@ -99,7 +99,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve database credentials from Conjur
         uses: ./
@@ -120,7 +120,7 @@ jobs:
             --execute="SELECT current_user(), database(), now();"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 4 - Hardcoded vs Conjur (Before / After)
@@ -138,7 +138,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: "BAD PRACTICE: hardcoded credential (connection will fail)"
         run: |
@@ -167,7 +167,7 @@ jobs:
             --execute="SELECT 'connected!' AS status;"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 5 - Least Privilege / Access Denied
@@ -185,7 +185,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: "Retrieve authorized secret (should succeed)"
         uses: ./
@@ -218,7 +218,7 @@ jobs:
           fi
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 6 - Real Query & Data Retrieval
@@ -236,7 +236,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve database credentials from Conjur
         uses: ./
@@ -262,7 +262,7 @@ jobs:
             --execute="SELECT current_user() AS logged_in_as, now() AS query_time;"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 7 - Credential Rotation (Zero Pipeline Changes)
@@ -281,7 +281,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve credentials from Conjur (run 1)
         uses: ./
@@ -303,7 +303,7 @@ jobs:
           echo "--- This pipeline needs zero changes to keep working      ---"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 8 - Environment Promotion (dev → staging → prod)
@@ -326,7 +326,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve dev secrets from Conjur
         uses: ./
@@ -343,7 +343,7 @@ jobs:
           echo "DEV deployment complete."
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   stage-8-promote-staging:
     name: "Stage 8b - Promote: staging"
@@ -356,7 +356,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve staging secrets from Conjur
         uses: ./
@@ -373,7 +373,7 @@ jobs:
           echo "STAGING deployment complete."
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   stage-8-promote-prod:
     name: "Stage 8c - Promote: prod (requires approval)"
@@ -386,7 +386,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve prod secrets from Conjur
         uses: ./
@@ -403,7 +403,7 @@ jobs:
           echo "PRODUCTION deployment complete."
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 9 - SSH Deploy with Credentials from Conjur
@@ -424,7 +424,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve SSH credentials from Conjur
         uses: ./
@@ -444,7 +444,7 @@ jobs:
             "echo 'Connected via credentials from Conjur — host: \$(hostname), date: \$(date)'"
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 10 - Docker Registry Login with Conjur Credentials
@@ -465,7 +465,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Retrieve Docker Hub credentials from Conjur
         uses: ./
@@ -494,7 +494,7 @@ jobs:
         run: docker logout docker.io
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1
 
   # ============================================================
   # STAGE 11 - Audit Trail
@@ -516,7 +516,7 @@ jobs:
       contents: 'read'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Authenticate with Conjur to obtain session token
         run: |
@@ -565,4 +565,4 @@ jobs:
           echo "Zero credentials stored in this repository."
 
       - name: Clean Workspace
-        uses: AutoModality/action-clean@v1.1.0
+        uses: AutoModality/action-clean@v1.1.1

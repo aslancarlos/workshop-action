@@ -1,4 +1,4 @@
-FROM alpine:3.23
+FROM alpine:3.24
 
 LABEL org.opencontainers.image.authors="CyberArk Software Ltd."
 
@@ -11,8 +11,12 @@ COPY entrypoint.sh /conjur-action/entrypoint.sh
 
 COPY CHANGELOG.md /conjur-action/CHANGELOG.md
 
-RUN chmod +x /conjur-action/entrypoint.sh
+RUN chown -R 1001:0 /conjur-action \
+	&& chmod -R g=u /conjur-action \
+	&& chmod ug+x /conjur-action/entrypoint.sh
 
 WORKDIR /conjur-action
+
+USER 1001
 
 ENTRYPOINT ["/conjur-action/entrypoint.sh"]
